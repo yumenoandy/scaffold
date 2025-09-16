@@ -1,0 +1,33 @@
+help:
+    just -l
+
+[positional-arguments]
+[no-cd]
+@template template dest='':
+  set -eu
+  template_dir="{{justfile_directory()}}/{{template}}"
+  if [ ! -d "$template_dir" ]; then
+    echo "Template '{{template}}' not found at $template_dir" >&2
+    exit 1
+  fi
+
+  dest_path="{{dest}}"
+  if [ -z "$dest_path" ]; then
+    dest_path="$(basename "$template_dir")"
+  fi
+
+  parent_dir="$(dirname "$dest_path")"
+  if [ ! -d "$parent_dir" ]; then
+    mkdir -p "$parent_dir"
+  fi
+
+  if [ -e "$dest_path" ] && [ "$dest_path" != "." ]; then
+    echo "Destination '$dest_path' already exists" >&2
+    exit 1
+  fi
+
+  if [ "$dest_path" = "." ]; then
+    cp -R "$template_dir"/. "$dest_path"
+  else
+    cp -R "$template_dir" "$dest_path"
+  fi
