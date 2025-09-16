@@ -1,33 +1,46 @@
 help:
     just -l
 
-[positional-arguments]
+## Copy a template directory into a destination. Run without arguments to list available templates.
 [no-cd]
-@template template dest='':
-  set -eu
-  template_dir="{{justfile_directory()}}/{{template}}"
-  if [ ! -d "$template_dir" ]; then
-    echo "Template '{{template}}' not found at $template_dir" >&2
-    exit 1
-  fi
+@template template='' dest='':
+    #!/usr/bin/env bash
+    set -eu
 
-  dest_path="{{dest}}"
-  if [ -z "$dest_path" ]; then
-    dest_path="$(basename "$template_dir")"
-  fi
+    templates_root="{{justfile_directory()}}"
+    template_name="{{template}}"
 
-  parent_dir="$(dirname "$dest_path")"
-  if [ ! -d "$parent_dir" ]; then
-    mkdir -p "$parent_dir"
-  fi
+    if [ -z "$template_name" ]; then
+        echo "Available templates:"
+        find "$templates_root" -mindepth 1 -maxdepth 1 -type d -not -name ".*" -exec basename {} \; | sort | sed "s/^/  /"
+        exit 0
+    fi
 
-  if [ -e "$dest_path" ] && [ "$dest_path" != "." ]; then
-    echo "Destination '$dest_path' already exists" >&2
-    exit 1
-  fi
+    template_dir="$templates_root/$template_name"
+    if [ ! -d "$template_dir" ]; then
+        echo "Template \"$template_name\" not found." >&2
+        echo "Available templates:" >&2
+        find "$templates_root" -mindepth 1 -maxdepth 1 -type d -not -name ".*" -exec basename {} \; | sort | sed "s/^/  /" >&2
+        exit 1
+    fi
 
-  if [ "$dest_path" = "." ]; then
-    cp -R "$template_dir"/. "$dest_path"
-  else
-    cp -R "$template_dir" "$dest_path"
-  fi
+    dest_path="{{dest}}"
+    if [ -z "$dest_path" ]; then
+        dest_path="$template_name"
+    fi
+
+    parent_dir="$(dirname "$dest_path")"
+    if [ ! -d "$parent_dir" ]; then
+        mkdir -p "$parent_dir"
+    fi
+
+    if [ -e "$dest_path" ] && [ "$dest_path" != "." ]; then
+        echo "Destination \"$dest_path\" already exists" >&2
+        exit 1
+    fi
+
+    if [ "$dest_path" = "." ]; then
+        cp -R "$template_dir"/. "$dest_path"
+    else
+        cp -R "$template_dir" "$dest_path"
+    fi
