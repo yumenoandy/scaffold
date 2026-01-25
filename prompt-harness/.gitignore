@@ -1,0 +1,9 @@
+.DS_Store
+target
+data
+INPUTS
+merged
+results
+
+docs
+*.sh
